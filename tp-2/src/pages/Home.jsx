@@ -1,49 +1,46 @@
-// src/pages/Home.jsx
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { getProducts } from "../services/products";
+import { useEffect, useState } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
+import { Link } from 'react-router-dom';
+import database from '../config/firebase';
 
 export default function Home() {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const data = await getProducts();
-      setProducts(data || []);
+    const fetchProducts = async () => {
+      const collectionRef = collection(database, 'products');
+      const snapshot = await getDocs(collectionRef);
+      const productsList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setProducts(productsList);
     };
-    fetchData();
+
+    fetchProducts();
   }, []);
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h2>Productos</h2>
-      {products.length === 0 ? (
-        <p>Cargando productos...</p>
-      ) : (
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "20px"
-        }}>
-          {products.map(product => (
-            <div
-              key={product.id}
-              style={{
-                border: "1px solid #ccc",
-                borderRadius: "8px",
-                padding: "16px",
-                backgroundColor: "#fff"
-              }}
-            >
-              <h3>{product.name}</h3>
-              <p><strong>Precio:</strong> ${product.price}</p>
-              <Link to={`/product/${product.id}`} style={{ color: "#007bff" }}>
-                Ver detalles
-              </Link>
-            </div>
-          ))}
-        </div>
-      )}
+    <div>
+      <h2>Listado de Productos</h2>
+
+      <Link to="/crear-producto">
+        <button>Crear nuevo producto</button>
+      </Link>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginTop: '20px' }}>
+        {products.map(product => (
+          <div key={product.id} style={{ border: '1px solid #ccc', padding: '10px' }}>
+            <h3>{product.name}</h3>
+            <p>{product.description}</p>
+            <p>Precio: ${product.price}</p>
+            {product.img && (
+              <img src={product.img} alt={product.name} style={{ width: '100%', height: 'auto' }} />
+            )}
+            <Link to={`/product/${product.id}`}>Ver detalles</Link>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
